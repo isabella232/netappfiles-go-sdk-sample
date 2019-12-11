@@ -8,33 +8,50 @@ package main
 import (
 	//"context"
 	//"fmt"
-	//"os"
 
 	"fmt"
+	"os"
 
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/iam"
+	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/uri"
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/utils"
 	//"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	//"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
+var (
+	cleanUp  bool = false
+	exitCode int
+)
+
 func main() {
+
+	// Cleanup and exit handling
+	defer func() { exit(); os.Exit(exitCode) }()
 
 	utils.PrintHeader("Azure NetAppFiles Go SDK Sample - sample application that performs CRUD management operations (deploys NFSv3 and NFSv4.1 Volumes)")
 
 	authorizer, err := iam.GetAuthorizer()
 	if err != nil {
-		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting authorizer token: %v\n", err))
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting authorizer token: %v", err))
+		exitCode = 1
 		return
 	}
 
-	test, err := utils.GetResourceValue("aa", "aa")
+	test, err := uri.GetResourceValue("/subscriptions/66bc9830-19b6-4987-94d2-0e487be7aa47/resourceGroups/my-rg/providers/Microsoft.NetApp/netAppAccounts/hiddenriver5024/capacityPools/Pool01", "capacityPools")
 	if err != nil {
-		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting resource value: %v\n", err))
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting resource value: %v", err))
+		exitCode = 1
 		return
 	}
 
 	fmt.Println(test)
+
+	resourceURI := "/subscriptions/66bc9830-19b6-4987-94d2-0e487be7aa47/resourceGroups/my-rg/providers/Microsoft.NetApp/netAppAccounts/hiddenriver5024/capacityPools/Pool01"
+	resourceName, _ := uri.GetResourceName(resourceURI)
+	fmt.Println(resourceName)
+	fmt.Printf("Is this a capacity pool? %v\n", uri.IsAnfCapacityPool(resourceURI))
+	fmt.Printf("Is this an account? %v\n", uri.IsAnfAccount(resourceURI))
 
 	fmt.Println(*authorizer)
 
@@ -71,4 +88,12 @@ func main() {
 	// 	fmt.Println(rg.name)
 	// }
 
+}
+
+func exit() {
+	utils.ConsoleOutput("Exiting")
+
+	if cleanUp {
+		utils.ConsoleOutput("\tPerforming clean up")
+	}
 }
