@@ -13,7 +13,6 @@ import (
 	"fmt"
 
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/iam"
-	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/resourceuri"
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/utils"
 	//"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	//"github.com/Azure/go-autorest/autorest/azure/auth"
@@ -25,13 +24,13 @@ func main() {
 
 	authorizer, err := iam.GetAuthorizer()
 	if err != nil {
-		utils.ConsoleOutput(fmt.Errorf("an error ocurred getting authorizer token: %v\n", err))
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting authorizer token: %v\n", err))
 		return
 	}
 
-	test, err := resourceuri.GetResourceValue("", "")
+	test, err := utils.GetResourceValue("aa", "aa")
 	if err != nil {
-		utils.ConsoleOutput(fmt.Errorf(err))
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting resource value: %v\n", err))
 		return
 	}
 
