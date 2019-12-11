@@ -31,3 +31,13 @@ func Contains(array []string, element string) bool {
 	}
 	return false
 }
+
+// GetBytesInTiB converts a value from bytes to tebibytes (TiB)
+func GetBytesInTiB(size uint64) uint32 {
+	return uint32(size / 1024 / 1024 / 1024 / 1024)
+}
+
+// GetTiBInBytes converts a value from tebibytes (TiB) to bytes
+func GetTiBInBytes(size uint32) uint64 {
+	return uint64(size * 1024 * 1024 * 1024 * 1024)
+}
