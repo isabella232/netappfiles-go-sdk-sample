@@ -3,6 +3,12 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+// This package provides some functions to parse a resource
+// id and return their names based on their type.
+// It also validates if a resource is of an specific type based
+// on provided id and finally to validate if it is an ANF related
+// resource.
+
 package uri
 
 import (

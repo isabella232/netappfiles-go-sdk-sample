@@ -3,12 +3,18 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+// Package that provides some general functions.
+
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"strings"
+
+	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/models"
 )
 
 // PrintHeader prints a header message
@@ -17,7 +23,7 @@ func PrintHeader(header string) {
 	fmt.Println(strings.Repeat("-", len(header)))
 }
 
-// ConsoleOutput writes to stdout and to a logger.
+// ConsoleOutput writes to stdout.
 func ConsoleOutput(message string) {
 	log.Println(message)
 }
@@ -40,4 +46,16 @@ func GetBytesInTiB(size uint64) uint32 {
 // GetTiBInBytes converts a value from tebibytes (TiB) to bytes
 func GetTiBInBytes(size uint32) uint64 {
 	return uint64(size * 1024 * 1024 * 1024 * 1024)
+}
+
+// ReadAzureBasicInfoJSON reads the Azure Authentication json file json file and unmarshals it.
+func ReadAzureBasicInfoJSON(path string) (*models.AzureBasicInfo, error) {
+	infoJSON, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Sprintf("failed to read file: %v", err)
+		return &models.AzureBasicInfo{}, err
+	}
+	var info models.AzureBasicInfo
+	json.Unmarshal(infoJSON, &info)
+	return &info, nil
 }

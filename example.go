@@ -3,97 +3,148 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+// This sample code creates an Azure Netapp Files Account, a Capacity Pool,
+// and two volumes, one NFSv3 and one NFSv4.1, then it takes a snapshot
+// of the first volume (NFSv3) and performs clean up if the variable
+// shouldCleanUp is changed to true.
+//
+// This package uses go-haikunator package (https://github.com/yelinaung/go-haikunator)
+// port from Python's haikunator module and therefore used here just for sample simplification,
+// this doesn't mean that it is endorsed/thouroughly tested by any means, use at own risk.
+// Feel free to provide your own names on variables using it.
+
 package main
 
 import (
-	//"context"
-	//"fmt"
-
+	"context"
 	"fmt"
 	"os"
+	"time"
 
-	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/iam"
-	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/uri"
+	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/sdkutils"
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/utils"
-	//"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
-	//"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/yelinaung/go-haikunator"
+)
+
+const (
+	virtualNetworksApiVersion string = "2019-09-01"
 )
 
 var (
-	cleanUp  bool = false
-	exitCode int
+	shouldCleanUp         bool = false
+	exitCode              int
+	location              string = "westus2"
+	resourceGroupName     string = "anf02-rg"
+	vnetResourceGroupName string = "anf02-rg"
+	vnetName              string = "vnet-03"
+	subnetName            string = "anf-sn"
+	anfAccountName        string = haikunator.New(time.Now().UTC().UnixNano()).Haikunate()
+	capacityPoolName      string = "Pool01"
+	serviceLevel          string = "Standard"    // Valid service levels are Standard, Premium and Ultra
+	capacityPoolSizeBytes int64  = 4398046511104 // 4TiB (minimum size)
+	nfsv3VolumeName       string = fmt.Sprintf("NFSv3-Vol-%v-%v", anfAccountName, capacityPoolName)
+	nfsv41VolumeName      string = fmt.Sprintf("NFSv41-Vol-%v-%v", anfAccountName, capacityPoolName)
+	sampleTags                   = map[string]*string{
+		"Author":  to.StringPtr("ANF Go SDK Sample"),
+		"Service": to.StringPtr("Azure Netapp Files"),
+	}
 )
 
 func main() {
+
+	cntx := context.Background()
 
 	// Cleanup and exit handling
 	defer func() { exit(); os.Exit(exitCode) }()
 
 	utils.PrintHeader("Azure NetAppFiles Go SDK Sample - sample application that performs CRUD management operations (deploys NFSv3 and NFSv4.1 Volumes)")
 
-	authorizer, err := iam.GetAuthorizer()
+	// Getting subscription ID from authentication file
+	config, err := utils.ReadAzureBasicInfoJSON(os.Getenv("AZURE_AUTH_LOCATION"))
 	if err != nil {
-		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting authorizer token: %v", err))
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting non-sensitive info from AzureAuthFile: %v", err))
 		exitCode = 1
 		return
 	}
 
-	test, err := uri.GetResourceValue("/subscriptions/66bc9830-19b6-4987-94d2-0e487be7aa47/resourceGroups/my-rg/providers/Microsoft.NetApp/netAppAccounts/hiddenriver5024/capacityPools/Pool01", "capacityPools")
+	// Checking if subnet exists before any other operation starts
+	subnetID := fmt.Sprintf("/subscriptions/%v/resourceGroups/%v/providers/Microsoft.Network/virtualNetworks/%v/subnets/%v",
+		*config.SubscriptionID,
+		vnetResourceGroupName,
+		vnetName,
+		subnetName,
+	)
+
+	utils.ConsoleOutput(fmt.Sprintf("Checking if subnet %v exists.", subnetID))
+
+	_, err = sdkutils.GetResourceByID(cntx, subnetID, virtualNetworksApiVersion)
 	if err != nil {
-		utils.ConsoleOutput(fmt.Sprintf("an error ocurred getting resource value: %v", err))
+		if string(err.Error()) == "NotFound" {
+			utils.ConsoleOutput(fmt.Sprintf("error: subnet %v not found: %v", subnetID, err))
+		} else {
+			utils.ConsoleOutput(fmt.Sprintf("error: an error ocurred trying to check if %v exists: %v", subnetID, err))
+		}
+
 		exitCode = 1
 		return
 	}
 
-	fmt.Println(test)
+	// Adding
 
-	resourceURI := "/subscriptions/66bc9830-19b6-4987-94d2-0e487be7aa47/resourceGroups/my-rg/providers/Microsoft.NetApp/netAppAccounts/hiddenriver5024/capacityPools/Pool01"
-	resourceName, _ := uri.GetResourceName(resourceURI)
-	fmt.Println(resourceName)
-	fmt.Printf("Is this a capacity pool? %v\n", uri.IsAnfCapacityPool(resourceURI))
-	fmt.Printf("Is this an account? %v\n", uri.IsAnfAccount(resourceURI))
+	// Azure NetApp Files Account creation
+	utils.ConsoleOutput("Creating Azure NetApp Files account...")
+	account, err := sdkutils.CreateAnfAccount(cntx, location, resourceGroupName, anfAccountName, sampleTags)
+	if err != nil {
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating account: %v", err))
+		exitCode = 1
+		return
+	}
+	utils.ConsoleOutput(fmt.Sprintf("Account successfully created, resource id: %v", *account.ID))
 
-	fmt.Println(*authorizer)
+	// Capacity pool creation
+	utils.ConsoleOutput("Creating Capacity Pool...")
+	capacityPool, err := sdkutils.CreateAnfCapacityPool(
+		cntx,
+		location,
+		resourceGroupName,
+		*account.Name,
+		capacityPoolName,
+		serviceLevel,
+		capacityPoolSizeBytes,
+		sampleTags,
+	)
+	if err != nil {
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating capacity pool: %v", err))
+		exitCode = 1
+		return
+	}
+	utils.ConsoleOutput(fmt.Sprintf("Capacity Pool successfully created, resource id: %v", *capacityPool.ID))
 
-	// cntx := context.Background()
+	// NFS v3 volume creation
 
-	// fmt.Println(os.Getenv("AZURE_AUTH_LOCATION"))
-	// subscriptionID := "66bc9830-19b6-4987-94d2-0e487be7aa47"
-	// resourceManagerEndpointURL := "https://management.azure.com/"
+	// Check this to set true/false on nfsv3 or nfsv41 properties of export rule
+	// c := map[bool]int{true: a, false: b}[a > b]
 
-	// resourceClient := resources.NewGroupsClient(subscriptionID)
+	// NFS v4.1 volume creation
 
-	// authorizer, err := auth.NewAuthorizerFromFile(resourceManagerEndpointURL)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// resourceClient.Authorizer = authorizer
-	// resourceClient.AddToUserAgent("sdk-sample")
-
-	// resourceGroups, err := resources.GroupsClient.List(resourceClient, cntx, "", nil)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// for _, rg := range resourceGroups.Values() {
-
-	// 	fmt.Println(*rg.Name)
-	// }
-
-	// fmt.Println(resourceGroups)
-	// for _, rg := range resourceGroups.NextWithContext(cntx) {
-	// 	fmt.Println(rg.name)
-	// }
+	// NFS v3 snapshot creation
 
 }
 
 func exit() {
 	utils.ConsoleOutput("Exiting")
 
-	if cleanUp {
+	if shouldCleanUp {
 		utils.ConsoleOutput("\tPerforming clean up")
+
+		// Snapshot Cleanup
+
+		// Volumes Cleanup
+
+		// Pool Cleanup
+
+		// Account Cleanup
+
 	}
 }

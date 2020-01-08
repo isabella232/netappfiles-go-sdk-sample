@@ -3,6 +3,11 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+// Sample package that is used to obtain an authorizer token
+// and to return unmarshall the Azure authentication file
+// created by az ad sp create create-for-rbac command-line
+// into an AzureAuthInfo object.
+
 package iam
 
 import (
@@ -19,18 +24,18 @@ import (
 )
 
 // GetAuthorizer gets an authorization token to be used within ANF client
-func GetAuthorizer() (*autorest.Authorizer, error) {
+func GetAuthorizer() (autorest.Authorizer, string, error) {
 
 	// Getting information from authentication file
-	authInfo, err := readAuthJSON(os.Getenv("AZURE_AUTH_LOCATION"))
+	info, err := readAuthJSON(os.Getenv("AZURE_AUTH_LOCATION"))
 
-	authorizer, err := auth.NewAuthorizerFromFile(*authInfo.ResourceManagerEndpointURL)
+	authorizer, err := auth.NewAuthorizerFromFile(*info.ResourceManagerEndpointURL)
 	if err != nil {
 		utils.ConsoleOutput(fmt.Sprintf("%v", err))
-		return nil, err
+		return nil, "", err
 	}
 
-	return &authorizer, nil
+	return authorizer, *info.SubscriptionID, nil
 }
 
 // readAuthJSON reads the Azure Authentication json file json file and unmarshals it.
