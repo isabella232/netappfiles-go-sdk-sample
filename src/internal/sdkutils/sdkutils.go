@@ -11,12 +11,12 @@ package sdkutils
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/iam"
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/uri"
+	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/utils"
 
 	"github.com/Azure/azure-sdk-for-go/services/netapp/mgmt/2019-08-01/netapp"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
@@ -25,8 +25,13 @@ import (
 
 const (
 	userAgent = "anf-sdk-sample-agent"
-	NFSv3     = "NFSv3"
-	NFSv41    = "NFSv4.1"
+	nfsv3     = "NFSv3"
+	nfsv41    = "NFSv4.1"
+	cifs      = "CIFS"
+)
+
+var (
+	validProtocols = []string{nfsv3, nfsv41, "CIFS"}
 )
 
 func getResourcesClient() (resources.Client, error) {
@@ -65,6 +70,20 @@ func getPoolsClient() (netapp.PoolsClient, error) {
 	}
 
 	client := netapp.NewPoolsClient(subscriptionID)
+	client.Authorizer = authorizer
+	client.AddToUserAgent(userAgent)
+
+	return client, nil
+}
+
+func getVolumesClient() (netapp.VolumesClient, error) {
+
+	authorizer, subscriptionID, err := iam.GetAuthorizer()
+	if err != nil {
+		return netapp.VolumesClient{}, err
+	}
+
+	client := netapp.NewVolumesClient(subscriptionID)
 	client.Authorizer = authorizer
 	client.AddToUserAgent(userAgent)
 
@@ -139,17 +158,9 @@ func CreateAnfCapacityPool(ctx context.Context, location, resourceGroupName, acc
 		return netapp.CapacityPool{}, err
 	}
 
-	var svcLevel netapp.ServiceLevel
-
-	switch strings.ToLower(serviceLevel) {
-	case "ultra":
-		svcLevel = netapp.Ultra
-	case "premium":
-		svcLevel = netapp.Premium
-	case "standard":
-		svcLevel = netapp.Standard
-	default:
-		return netapp.CapacityPool{}, errors.New(fmt.Sprintf("invalid service level, supported service levels are: %v", netapp.PossibleServiceLevelValues()))
+	svcLevel, err := validateAnfServiceLevel(serviceLevel)
+	if err != nil {
+		return netapp.CapacityPool{}, err
 	}
 
 	future, err := poolClient.CreateOrUpdate(
@@ -166,6 +177,7 @@ func CreateAnfCapacityPool(ctx context.Context, location, resourceGroupName, acc
 		accountName,
 		poolName,
 	)
+
 	if err != nil {
 		return netapp.CapacityPool{}, fmt.Errorf("cannot create pool: %v", err)
 	}
@@ -176,4 +188,93 @@ func CreateAnfCapacityPool(ctx context.Context, location, resourceGroupName, acc
 	}
 
 	return future.Result(poolClient)
+}
+
+// CreateAnfVolume creates an ANF volume within a Capacity Pool
+func CreateAnfVolume(ctx context.Context, location, resourceGroupName, accountName, poolName, volumeName, serviceLevel, subnetID string, protocolTypes []string, volumeUsageQuota int64, unixReadOnly, unixReadWrite bool, tags map[string]*string) (netapp.Volume, error) {
+
+	if len(protocolTypes) > 1 {
+		return netapp.Volume{}, fmt.Errorf("only one protocol type is supported at this time")
+	}
+
+	_, found := utils.FindInSlice(validProtocols, protocolTypes[0])
+	if !found {
+		return netapp.Volume{}, fmt.Errorf("invalid protocol type, valid protocol types are: %v", validProtocols)
+	}
+
+	svcLevel, err := validateAnfServiceLevel(serviceLevel)
+	if err != nil {
+		return netapp.Volume{}, err
+	}
+
+	volumeClient, err := getVolumesClient()
+	if err != nil {
+		return netapp.Volume{}, err
+	}
+
+	svcLevel, err = validateAnfServiceLevel(serviceLevel)
+	if err != nil {
+		return netapp.Volume{}, err
+	}
+
+	future, err := volumeClient.CreateOrUpdate(
+		ctx,
+		netapp.Volume{
+			Location: to.StringPtr(location),
+			Tags:     tags,
+			VolumeProperties: &netapp.VolumeProperties{
+				ExportPolicy: &netapp.VolumePropertiesExportPolicy{
+					Rules: &[]netapp.ExportPolicyRule{
+						{
+							AllowedClients: to.StringPtr("0.0.0.0/0"),
+							Cifs:           to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == cifs]),
+							Nfsv3:          to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == nfsv3]),
+							Nfsv41:         to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == nfsv41]),
+							RuleIndex:      to.Int32Ptr(1),
+							UnixReadOnly:   to.BoolPtr(unixReadOnly),
+							UnixReadWrite:  to.BoolPtr(unixReadWrite),
+						},
+					},
+				},
+				ProtocolTypes:  &protocolTypes,
+				ServiceLevel:   svcLevel,
+				SubnetID:       to.StringPtr(subnetID),
+				UsageThreshold: to.Int64Ptr(volumeUsageQuota),
+				CreationToken:  to.StringPtr(volumeName),
+			},
+		},
+		resourceGroupName,
+		accountName,
+		poolName,
+		volumeName,
+	)
+
+	if err != nil {
+		return netapp.Volume{}, fmt.Errorf("cannot create volume: %v", err)
+	}
+
+	err = future.WaitForCompletionRef(ctx, volumeClient.Client)
+	if err != nil {
+		return netapp.Volume{}, fmt.Errorf("cannot get the volume create or update future response: %v", err)
+	}
+
+	return future.Result(volumeClient)
+}
+
+func validateAnfServiceLevel(serviceLevel string) (validatedServiceLevel netapp.ServiceLevel, err error) {
+
+	var svcLevel netapp.ServiceLevel
+
+	switch strings.ToLower(serviceLevel) {
+	case "ultra":
+		svcLevel = netapp.Ultra
+	case "premium":
+		svcLevel = netapp.Premium
+	case "standard":
+		svcLevel = netapp.Standard
+	default:
+		return "", fmt.Errorf("invalid service level, supported service levels are: %v", netapp.PossibleServiceLevelValues())
+	}
+
+	return svcLevel, nil
 }

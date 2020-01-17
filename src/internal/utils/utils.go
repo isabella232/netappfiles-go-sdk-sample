@@ -59,3 +59,14 @@ func ReadAzureBasicInfoJSON(path string) (*models.AzureBasicInfo, error) {
 	json.Unmarshal(infoJSON, &info)
 	return &info, nil
 }
+
+// FindInSlice returns index greater than -1 and true if item is found
+// Code from https://golangcode.com/check-if-element-exists-in-slice/
+func FindInSlice(slice []string, val string) (int, bool) {
+	for i, item := range slice {
+		if item == val {
+			return i, true
+		}
+	}
+	return -1, false
+}

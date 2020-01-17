@@ -41,8 +41,11 @@ var (
 	subnetName            string = "anf-sn"
 	anfAccountName        string = haikunator.New(time.Now().UTC().UnixNano()).Haikunate()
 	capacityPoolName      string = "Pool01"
-	serviceLevel          string = "Standard"    // Valid service levels are Standard, Premium and Ultra
-	capacityPoolSizeBytes int64  = 4398046511104 // 4TiB (minimum size)
+	serviceLevel          string = "Standard"          // Valid service levels are Standard, Premium and Ultra
+	capacityPoolSizeBytes int64  = 4398046511104       // 4TiB (minimum capacity pool size)
+	volumeSizeBytes       int64  = 107374182400        // 100GiB (minimum volume size)
+	nfsv3ProtocolTypes           = []string{"NFSv3"}   // Multiple NFS protocol types are not supported at the moment this sample was written
+	nfsv41ProtocolTypes          = []string{"NFSv4.1"} // Multiple NFS protocol types are not supported at the moment this sample was written
 	nfsv3VolumeName       string = fmt.Sprintf("NFSv3-Vol-%v-%v", anfAccountName, capacityPoolName)
 	nfsv41VolumeName      string = fmt.Sprintf("NFSv41-Vol-%v-%v", anfAccountName, capacityPoolName)
 	sampleTags                   = map[string]*string{
@@ -122,11 +125,52 @@ func main() {
 	utils.ConsoleOutput(fmt.Sprintf("Capacity Pool successfully created, resource id: %v", *capacityPool.ID))
 
 	// NFS v3 volume creation
-
-	// Check this to set true/false on nfsv3 or nfsv41 properties of export rule
-	// c := map[bool]int{true: a, false: b}[a > b]
+	utils.ConsoleOutput("Creating NFSv3 Volume...")
+	nfsv3Volume, err := sdkutils.CreateAnfVolume(
+		cntx,
+		location,
+		resourceGroupName,
+		*account.Name,
+		capacityPoolName,
+		nfsv3VolumeName,
+		serviceLevel,
+		subnetID,
+		nfsv3ProtocolTypes,
+		volumeSizeBytes,
+		false,
+		true,
+		sampleTags,
+	)
+	if err != nil {
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating NFSv3 volume: %v", err))
+		exitCode = 1
+		return
+	}
+	utils.ConsoleOutput(fmt.Sprintf("NFSv3 successfully created, resource id: %v", *nfsv3Volume.ID))
 
 	// NFS v4.1 volume creation
+	utils.ConsoleOutput("Creating NFSv4.1 Volume...")
+	nfsv41Volume, err := sdkutils.CreateAnfVolume(
+		cntx,
+		location,
+		resourceGroupName,
+		*account.Name,
+		capacityPoolName,
+		nfsv41VolumeName,
+		serviceLevel,
+		subnetID,
+		nfsv41ProtocolTypes,
+		volumeSizeBytes,
+		false,
+		true,
+		sampleTags,
+	)
+	if err != nil {
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating NFSv4.1 volume: %v", err))
+		exitCode = 1
+		return
+	}
+	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 successfully created, resource id: %v", *nfsv41Volume.ID))
 
 	// NFS v3 snapshot creation
 
