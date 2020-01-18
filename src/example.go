@@ -23,6 +23,7 @@ import (
 
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/sdkutils"
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/utils"
+	"github.com/Azure/azure-sdk-for-go/services/netapp/mgmt/2019-10-01/netapp"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/yelinaung/go-haikunator"
 )
@@ -32,23 +33,25 @@ const (
 )
 
 var (
-	shouldCleanUp         bool = false
-	exitCode              int
-	location              string = "westus2"
-	resourceGroupName     string = "anf02-rg"
-	vnetResourceGroupName string = "anf02-rg"
-	vnetName              string = "vnet-03"
-	subnetName            string = "anf-sn"
-	anfAccountName        string = haikunator.New(time.Now().UTC().UnixNano()).Haikunate()
-	capacityPoolName      string = "Pool01"
-	serviceLevel          string = "Standard"          // Valid service levels are Standard, Premium and Ultra
-	capacityPoolSizeBytes int64  = 4398046511104       // 4TiB (minimum capacity pool size)
-	volumeSizeBytes       int64  = 107374182400        // 100GiB (minimum volume size)
-	nfsv3ProtocolTypes           = []string{"NFSv3"}   // Multiple NFS protocol types are not supported at the moment this sample was written
-	nfsv41ProtocolTypes          = []string{"NFSv4.1"} // Multiple NFS protocol types are not supported at the moment this sample was written
-	nfsv3VolumeName       string = fmt.Sprintf("NFSv3-Vol-%v-%v", anfAccountName, capacityPoolName)
-	nfsv41VolumeName      string = fmt.Sprintf("NFSv41-Vol-%v-%v", anfAccountName, capacityPoolName)
-	sampleTags                   = map[string]*string{
+	shouldCleanUp           bool = false
+	exitCode                int
+	location                string = "westus2"
+	resourceGroupName       string = "anf02-rg"
+	vnetResourceGroupName   string = "anf02-rg"
+	vnetName                string = "vnet-03"
+	subnetName              string = "anf-sn"
+	anfAccountName          string = haikunator.New(time.Now().UTC().UnixNano()).Haikunate()
+	capacityPoolName        string = "Pool01"
+	serviceLevel            string = "Standard"          // Valid service levels are Standard, Premium and Ultra
+	capacityPoolSizeBytes   int64  = 4398046511104       // 4TiB (minimum capacity pool size)
+	volumeSizeBytes         int64  = 107374182400        // 100GiB (minimum volume size)
+	nfsv3ProtocolTypes             = []string{"NFSv3"}   // Multiple NFS protocol types are not supported at the moment this sample was written
+	nfsv41ProtocolTypes            = []string{"NFSv4.1"} // Multiple NFS protocol types are not supported at the moment this sample was written
+	nfsv3VolumeName         string = fmt.Sprintf("NFSv3-Vol-%v-%v", anfAccountName, capacityPoolName)
+	nfsv3SnapshotName       string = fmt.Sprintf("Snapshot-NFSv3-Vol-%v-%v", anfAccountName, capacityPoolName)
+	nfsv3VolumeNameFromSnap string = fmt.Sprintf("NFSv3-FromSnapshot-Vol-%v-%v", anfAccountName, capacityPoolName)
+	nfsv41VolumeName        string = fmt.Sprintf("NFSv41-Vol-%v-%v", anfAccountName, capacityPoolName)
+	sampleTags                     = map[string]*string{
 		"Author":  to.StringPtr("ANF Go SDK Sample"),
 		"Service": to.StringPtr("Azure Netapp Files"),
 	}
@@ -93,8 +96,6 @@ func main() {
 		return
 	}
 
-	// Adding
-
 	// Azure NetApp Files Account creation
 	utils.ConsoleOutput("Creating Azure NetApp Files account...")
 	account, err := sdkutils.CreateAnfAccount(cntx, location, resourceGroupName, anfAccountName, sampleTags)
@@ -135,6 +136,7 @@ func main() {
 		nfsv3VolumeName,
 		serviceLevel,
 		subnetID,
+		"",
 		nfsv3ProtocolTypes,
 		volumeSizeBytes,
 		false,
@@ -146,7 +148,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	utils.ConsoleOutput(fmt.Sprintf("NFSv3 successfully created, resource id: %v", *nfsv3Volume.ID))
+	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume successfully created, resource id: %v", *nfsv3Volume.ID))
 
 	// NFS v4.1 volume creation
 	utils.ConsoleOutput("Creating NFSv4.1 Volume...")
@@ -159,6 +161,7 @@ func main() {
 		nfsv41VolumeName,
 		serviceLevel,
 		subnetID,
+		"",
 		nfsv41ProtocolTypes,
 		volumeSizeBytes,
 		false,
@@ -170,9 +173,80 @@ func main() {
 		exitCode = 1
 		return
 	}
-	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 successfully created, resource id: %v", *nfsv41Volume.ID))
+	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 volume successfully created, resource id: %v", *nfsv41Volume.ID))
 
 	// NFS v3 snapshot creation
+	// Note: there is no difference between protocol types and creating a snapshot
+	//       we're taking it from NFSv3 in this example just for convenience
+	utils.ConsoleOutput("Creating Snapshot from NFSv3 Volume...")
+	snapshot, err := sdkutils.CreateAnfSnapshot(
+		cntx,
+		location,
+		resourceGroupName,
+		*account.Name,
+		capacityPoolName,
+		nfsv3VolumeName,
+		nfsv3SnapshotName,
+		sampleTags,
+	)
+	if err != nil {
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating snapshot from NFSv3 volume: %v", err))
+		exitCode = 1
+		return
+	}
+	utils.ConsoleOutput(fmt.Sprintf("Snapshot successfully created, resource id: %v", *snapshot.ID))
+
+	// Creating new volume (NFSv3) from Snapshot
+	// Note: In the case of creating a new volume from snapshot, we must use the same protocolType
+	//       as the source volume where the snapshot was taken from
+	utils.ConsoleOutput("Creating new NFSv3 Volume from Snapshot...")
+	newNFSv3Volume, err := sdkutils.CreateAnfVolume(
+		cntx,
+		location,
+		resourceGroupName,
+		*account.Name,
+		capacityPoolName,
+		nfsv3VolumeNameFromSnap,
+		serviceLevel,
+		subnetID,
+		*snapshot.SnapshotID,
+		nfsv3ProtocolTypes,
+		volumeSizeBytes,
+		false,
+		true,
+		sampleTags,
+	)
+	if err != nil {
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating NFSv3 volume from snapshot: %v", err))
+		exitCode = 1
+		return
+	}
+	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume from snapshot successfully created, resource id: %v", *newNFSv3Volume.ID))
+
+	// Update NFS v4 volume size to double its size (200GiB in this example)
+	utils.ConsoleOutput("Updating NFSv4.1 volume size...")
+
+	newVolumeSize := volumeSizeBytes * int64(2)
+	volumeChanges := netapp.VolumePatchProperties{
+		UsageThreshold: &newVolumeSize,
+	}
+
+	updatedNFS41Volume, err := sdkutils.UpdateAnfVolume(
+		cntx,
+		location,
+		resourceGroupName,
+		*account.Name,
+		capacityPoolName,
+		nfsv41VolumeName,
+		volumeChanges,
+		sampleTags,
+	)
+	if err != nil {
+		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while updating NFSv4.1 volume: %v", err))
+		exitCode = 1
+		return
+	}
+	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 volume successfully update with new size %v, resource id: %v", newVolumeSize, *updatedNFS41Volume.ID))
 
 }
 
