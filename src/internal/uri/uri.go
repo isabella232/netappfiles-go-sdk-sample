@@ -12,7 +12,6 @@
 package uri
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -22,14 +21,14 @@ const (
 )
 
 // GetResourceValue returns the name of a resource from resource id/uri based on resource type name.
-func GetResourceValue(resourceURI string, resourceName string) (string, error) {
+func GetResourceValue(resourceURI string, resourceName string) string {
 
 	if len(strings.TrimSpace(resourceURI)) == 0 {
-		return "", errors.New("resourceURI cannot be null")
+		return ""
 	}
 
 	if len(strings.TrimSpace(resourceName)) == 0 {
-		return "", errors.New("resourceName cannot be null")
+		return ""
 	}
 
 	if !strings.HasPrefix(resourceURI, "/") {
@@ -47,7 +46,7 @@ func GetResourceValue(resourceURI string, resourceName string) (string, error) {
 	// Dealing with case where resource name is the same as resource group
 	if rgIndex > -1 {
 		removedSameRgName := strings.Split(strings.ToLower(resourceURI), strings.ToLower(resourceName))
-		return strings.Split(removedSameRgName[len(removedSameRgName)-1], "/")[1], nil
+		return strings.Split(removedSameRgName[len(removedSameRgName)-1], "/")[1]
 	}
 
 	// Dealing with regular cases
@@ -55,112 +54,112 @@ func GetResourceValue(resourceURI string, resourceName string) (string, error) {
 	if index > -1 {
 		resource := strings.Split(resourceURI[index+len(resourceName):], "/")
 		if len(resource) > 1 {
-			return resource[1], nil
+			return resource[1]
 		}
 	}
 
-	return "", nil
+	return ""
 }
 
 // GetResourceName gets the resource name from resource id/uri
-func GetResourceName(resourceURI string) (string, error) {
+func GetResourceName(resourceURI string) string {
 
 	if len(strings.TrimSpace(resourceURI)) == 0 {
-		return "", errors.New("resourceURI cannot be null")
+		return ""
 	}
 
 	position := strings.LastIndex(resourceURI, "/")
-	return resourceURI[position+1:], nil
+	return resourceURI[position+1:]
 }
 
 // GetSubscription gets he subscription id from resource id/uri
-func GetSubscription(resourceURI string) (string, error) {
+func GetSubscription(resourceURI string) string {
 
 	if len(strings.TrimSpace(resourceURI)) == 0 {
-		return "", errors.New("resourceURI cannot be null")
+		return ""
 	}
 
-	subscriptionID, err := GetResourceValue(resourceURI, "/subscriptions")
-	if err != nil {
-		return "", err
+	subscriptionID := GetResourceValue(resourceURI, "/subscriptions")
+	if subscriptionID == "" {
+		return ""
 	}
 
-	return subscriptionID, nil
+	return subscriptionID
 }
 
 // GetResourceGroup gets the resource group name from resource id/uri
-func GetResourceGroup(resourceURI string) (string, error) {
+func GetResourceGroup(resourceURI string) string {
 
 	if len(strings.TrimSpace(resourceURI)) == 0 {
-		return "", errors.New("resourceURI cannot be null")
+		return ""
 	}
 
-	resourceGroupName, err := GetResourceValue(resourceURI, "/resourceGroups")
-	if err != nil {
-		return "", err
+	resourceGroupName := GetResourceValue(resourceURI, "/resourceGroups")
+	if resourceGroupName == "" {
+		return ""
 	}
 
-	return resourceGroupName, nil
+	return resourceGroupName
 }
 
 // GetAnfAccount gets an account name from resource id/uri
-func GetAnfAccount(resourceURI string) (string, error) {
+func GetAnfAccount(resourceURI string) string {
 
 	if len(strings.TrimSpace(resourceURI)) == 0 {
-		return "", errors.New("resourceURI cannot be null")
+		return ""
 	}
 
-	accountName, err := GetResourceValue(resourceURI, "/netAppAccounts")
-	if err != nil {
-		return "", err
+	accountName := GetResourceValue(resourceURI, "/netAppAccounts")
+	if accountName == "" {
+		return ""
 	}
 
-	return accountName, nil
+	return accountName
 }
 
 // GetAnfCapacityPool gets pool name from resource id/uri
-func GetAnfCapacityPool(resourceURI string) (string, error) {
+func GetAnfCapacityPool(resourceURI string) string {
 
 	if len(strings.TrimSpace(resourceURI)) == 0 {
-		return "", errors.New("resourceURI cannot be null")
+		return ""
 	}
 
-	accountName, err := GetResourceValue(resourceURI, "/netAppAccounts")
-	if err != nil {
-		return "", err
+	accountName := GetResourceValue(resourceURI, "/netAppAccounts")
+	if accountName == "" {
+		return ""
 	}
 
-	return accountName, nil
+	return accountName
 }
 
 // GetAnfVolume gets volume name from resource id/uri
-func GetAnfVolume(resourceURI string) (string, error) {
+func GetAnfVolume(resourceURI string) string {
 
 	if len(strings.TrimSpace(resourceURI)) == 0 {
-		return "", errors.New("resourceURI cannot be null")
+		return ""
 	}
 
-	volumeName, err := GetResourceValue(resourceURI, "/volumes")
-	if err != nil {
-		return "", err
+	volumeName := GetResourceValue(resourceURI, "/volumes")
+	if volumeName == "" {
+		return ""
 	}
 
-	return volumeName, nil
+	return volumeName
 }
 
 // GetAnfSnapshot gets snapshot name from resource id/uri
-func GetAnfSnapshot(resourceURI string) (string, error) {
+func GetAnfSnapshot(resourceURI string) string {
 
 	if len(strings.TrimSpace(resourceURI)) == 0 {
-		return "", errors.New("resourceURI cannot be null")
+		return ""
 	}
 
-	snapshotName, err := GetResourceValue(resourceURI, "/snapshots")
-	if err != nil {
-		return "", err
+	snapshotName := GetResourceValue(resourceURI, "/snapshots")
+	if snapshotName == "" {
+		return ""
 	}
 
-	return snapshotName, nil
+	return snapshotName
 }
 
 // IsAnfResource checks if resource is an ANF related resource
@@ -217,5 +216,5 @@ func IsAnfAccount(resourceURI string) bool {
 		!IsAnfVolume(resourceURI) &&
 		!IsAnfCapacityPool(resourceURI) &&
 		strings.LastIndex(resourceURI, "/backupPolicies/") == -1 &&
-		strings.LastIndex(resourceURI, "/netpAppAccounts/") > -1
+		strings.LastIndex(resourceURI, "/netAppAccounts/") > -1
 }

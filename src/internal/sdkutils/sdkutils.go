@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/iam"
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/uri"
@@ -131,13 +132,13 @@ func GetResourceByID(ctx context.Context, resourceID, APIVersion string) (resour
 	}
 
 	parentResource := ""
-	resourceGroup, _ := uri.GetResourceGroup(resourceID)
-	resourceProvider, _ := uri.GetResourceValue(resourceID, "providers")
-	resourceName, _ := uri.GetResourceName(resourceID)
-	resourceType, _ := uri.GetResourceValue(resourceID, resourceProvider)
+	resourceGroup := uri.GetResourceGroup(resourceID)
+	resourceProvider := uri.GetResourceValue(resourceID, "providers")
+	resourceName := uri.GetResourceName(resourceID)
+	resourceType := uri.GetResourceValue(resourceID, resourceProvider)
 
 	if strings.Contains(resourceID, "/subnets/") {
-		parentResourceName, _ := uri.GetResourceValue(resourceID, resourceType)
+		parentResourceName := uri.GetResourceValue(resourceID, resourceType)
 		parentResource = fmt.Sprintf("%v/%v", resourceType, parentResourceName)
 		resourceType = "subnets"
 	}
@@ -365,4 +366,168 @@ func CreateAnfSnapshot(ctx context.Context, location, resourceGroupName, account
 	}
 
 	return future.Result(snapshotClient)
+}
+
+// DeleteAnfSnapshot deletes a Snapshot from an ANF volume
+func DeleteAnfSnapshot(ctx context.Context, resourceGroupName, accountName, poolName, volumeName, snapshotName string) error {
+
+	snapshotClient, err := getSnapshotsClient()
+	if err != nil {
+		return err
+	}
+
+	future, err := snapshotClient.Delete(
+		ctx,
+		resourceGroupName,
+		accountName,
+		poolName,
+		volumeName,
+		snapshotName,
+	)
+
+	if err != nil {
+		return fmt.Errorf("cannot delete snapshot: %v", err)
+	}
+
+	err = future.WaitForCompletionRef(ctx, snapshotClient.Client)
+	if err != nil {
+		return fmt.Errorf("cannot get the snapshot delete future response: %v", err)
+	}
+
+	return nil
+}
+
+// DeleteAnfVolume deletes a volume
+func DeleteAnfVolume(ctx context.Context, resourceGroupName, accountName, poolName, volumeName string) error {
+
+	volumesClient, err := getVolumesClient()
+	if err != nil {
+		return err
+	}
+
+	future, err := volumesClient.Delete(
+		ctx,
+		resourceGroupName,
+		accountName,
+		poolName,
+		volumeName,
+	)
+
+	if err != nil {
+		return fmt.Errorf("cannot delete volume: %v", err)
+	}
+
+	err = future.WaitForCompletionRef(ctx, volumesClient.Client)
+	if err != nil {
+		return fmt.Errorf("cannot get the volume delete future response: %v", err)
+	}
+
+	return nil
+}
+
+// DeleteAnfCapacityPool deletes a capacity pool
+func DeleteAnfCapacityPool(ctx context.Context, resourceGroupName, accountName, poolName string) error {
+
+	poolsClient, err := getPoolsClient()
+	if err != nil {
+		return err
+	}
+
+	future, err := poolsClient.Delete(
+		ctx,
+		resourceGroupName,
+		accountName,
+		poolName,
+	)
+
+	if err != nil {
+		return fmt.Errorf("cannot delete capacity pool: %v", err)
+	}
+
+	err = future.WaitForCompletionRef(ctx, poolsClient.Client)
+	if err != nil {
+		return fmt.Errorf("cannot get the capacity pool delete future response: %v", err)
+	}
+
+	return nil
+}
+
+// DeleteAnfAccount deletes an account
+func DeleteAnfAccount(ctx context.Context, resourceGroupName, accountName string) error {
+
+	accountsClient, err := getAccountsClient()
+	if err != nil {
+		return err
+	}
+
+	future, err := accountsClient.Delete(
+		ctx,
+		resourceGroupName,
+		accountName,
+	)
+
+	if err != nil {
+		return fmt.Errorf("cannot delete account: %v", err)
+	}
+
+	err = future.WaitForCompletionRef(ctx, accountsClient.Client)
+	if err != nil {
+		return fmt.Errorf("cannot get the account delete future response: %v", err)
+	}
+
+	return nil
+}
+
+// WaitForNoANFResource waits for a specified resource to don't exist anymore following a deletion.
+// This is due to a known issue related to ARM Cache where the state of the resource is still cached within ARM infrastructure
+// reporting that it still exists so looping into a get process will return 404 as soon as the cached state expires
+func WaitForNoANFResource(ctx context.Context, resourceID string, intervalInSec int, retries int) error {
+
+	var err error
+
+	for i := 0; i < retries; i++ {
+		time.Sleep(time.Duration(intervalInSec) * time.Second)
+		if uri.IsAnfSnapshot(resourceID) {
+			client, _ := getSnapshotsClient()
+			_, err = client.Get(
+				ctx,
+				uri.GetResourceGroup(resourceID),
+				uri.GetAnfAccount(resourceID),
+				uri.GetAnfCapacityPool(resourceID),
+				uri.GetAnfVolume(resourceID),
+				uri.GetAnfSnapshot(resourceID),
+			)
+		} else if uri.IsAnfVolume(resourceID) {
+			client, _ := getVolumesClient()
+			_, err = client.Get(
+				ctx,
+				uri.GetResourceGroup(resourceID),
+				uri.GetAnfAccount(resourceID),
+				uri.GetAnfCapacityPool(resourceID),
+				uri.GetAnfVolume(resourceID),
+			)
+		} else if uri.IsAnfCapacityPool(resourceID) {
+			client, _ := getPoolsClient()
+			_, err = client.Get(
+				ctx,
+				uri.GetResourceGroup(resourceID),
+				uri.GetAnfAccount(resourceID),
+				uri.GetAnfCapacityPool(resourceID),
+			)
+		} else if uri.IsAnfAccount(resourceID) {
+			client, _ := getAccountsClient()
+			_, err = client.Get(
+				ctx,
+				uri.GetResourceGroup(resourceID),
+				uri.GetAnfAccount(resourceID),
+			)
+		}
+
+		// In this case error is expected
+		if err != nil {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("exceeded number of retries: %v", retries)
 }

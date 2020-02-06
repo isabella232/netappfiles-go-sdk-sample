@@ -33,8 +33,7 @@ const (
 )
 
 var (
-	shouldCleanUp           bool = false
-	exitCode                int
+	shouldCleanUp           bool   = true
 	location                string = "westus2"
 	resourceGroupName       string = "anf02-rg"
 	vnetResourceGroupName   string = "anf02-rg"
@@ -55,6 +54,13 @@ var (
 		"Author":  to.StringPtr("ANF Go SDK Sample"),
 		"Service": to.StringPtr("Azure Netapp Files"),
 	}
+	exitCode                  int
+	snapshotID                string = ""
+	nfsv3VolumeID             string = ""
+	nfsv41VolumeID            string = ""
+	nfsv3VolumeFromSnapshotID string = ""
+	capacityPoolID            string = ""
+	acccountID                string = ""
 )
 
 func main() {
@@ -62,7 +68,7 @@ func main() {
 	cntx := context.Background()
 
 	// Cleanup and exit handling
-	defer func() { exit(); os.Exit(exitCode) }()
+	defer func() { exit(cntx); os.Exit(exitCode) }()
 
 	utils.PrintHeader("Azure NetAppFiles Go SDK Sample - sample application that performs CRUD management operations (deploys NFSv3 and NFSv4.1 Volumes)")
 
@@ -104,6 +110,7 @@ func main() {
 		exitCode = 1
 		return
 	}
+	acccountID = *account.ID
 	utils.ConsoleOutput(fmt.Sprintf("Account successfully created, resource id: %v", *account.ID))
 
 	// Capacity pool creation
@@ -123,6 +130,7 @@ func main() {
 		exitCode = 1
 		return
 	}
+	capacityPoolID = *capacityPool.ID
 	utils.ConsoleOutput(fmt.Sprintf("Capacity Pool successfully created, resource id: %v", *capacityPool.ID))
 
 	// NFS v3 volume creation
@@ -148,6 +156,7 @@ func main() {
 		exitCode = 1
 		return
 	}
+	nfsv3VolumeID = *nfsv3Volume.ID
 	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume successfully created, resource id: %v", *nfsv3Volume.ID))
 
 	// NFS v4.1 volume creation
@@ -173,10 +182,11 @@ func main() {
 		exitCode = 1
 		return
 	}
+	nfsv41VolumeID = *nfsv41Volume.ID
 	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 volume successfully created, resource id: %v", *nfsv41Volume.ID))
 
 	// NFS v3 snapshot creation
-	// Note: there is no difference between protocol types and creating a snapshot
+	// Note: there is no difference between protocol types when creating a snapshot
 	//       we're taking it from NFSv3 in this example just for convenience
 	utils.ConsoleOutput("Creating Snapshot from NFSv3 Volume...")
 	snapshot, err := sdkutils.CreateAnfSnapshot(
@@ -194,11 +204,12 @@ func main() {
 		exitCode = 1
 		return
 	}
+	snapshotID = *snapshot.ID
 	utils.ConsoleOutput(fmt.Sprintf("Snapshot successfully created, resource id: %v", *snapshot.ID))
 
 	// Creating new volume (NFSv3) from Snapshot
-	// Note: In the case of creating a new volume from snapshot, we must use the same protocolType
-	//       as the source volume where the snapshot was taken from
+	// Note: At the time when this sample code was written, creating a volume from snapshot with a different protocol
+	//       other than the protocol from the source volume is not supported.
 	utils.ConsoleOutput("Creating new NFSv3 Volume from Snapshot...")
 	newNFSv3Volume, err := sdkutils.CreateAnfVolume(
 		cntx,
@@ -221,6 +232,7 @@ func main() {
 		exitCode = 1
 		return
 	}
+	nfsv3VolumeFromSnapshotID = *newNFSv3Volume.ID
 	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume from snapshot successfully created, resource id: %v", *newNFSv3Volume.ID))
 
 	// Update NFS v4 volume size to double its size (200GiB in this example)
@@ -250,19 +262,102 @@ func main() {
 
 }
 
-func exit() {
+func exit(cntx context.Context) {
 	utils.ConsoleOutput("Exiting")
 
 	if shouldCleanUp {
 		utils.ConsoleOutput("\tPerforming clean up")
 
-		// Snapshot Cleanup
+		// Volume restored from Snaphost cleanup
+		utils.ConsoleOutput("\tCleaning up NFSv3 Volume Restored from Snapshot ...")
+		time.Sleep(3 * time.Second)
+		err := sdkutils.DeleteAnfVolume(
+			cntx,
+			resourceGroupName,
+			anfAccountName,
+			capacityPoolName,
+			nfsv3VolumeNameFromSnap,
+		)
+		if err != nil {
+			utils.ConsoleOutput(fmt.Sprintf("an error ocurred while deleting volume: %v", err))
+			exitCode = 1
+			return
+		}
+		sdkutils.WaitForNoANFResource(cntx, nfsv3VolumeFromSnapshotID, 60, 60)
+		utils.ConsoleOutput("\tVolume successfully deleted")
 
-		// Volumes Cleanup
+		// Snapshot Cleanup
+		utils.ConsoleOutput("\tCleaning up NFSv3 Volume Snapshot ...")
+		err = sdkutils.DeleteAnfSnapshot(
+			cntx,
+			resourceGroupName,
+			anfAccountName,
+			capacityPoolName,
+			nfsv3VolumeName,
+			nfsv3SnapshotName,
+		)
+		if err != nil {
+			utils.ConsoleOutput(fmt.Sprintf("an error ocurred while deleting NFSv3 volume snapshot: %v", err))
+			exitCode = 1
+			return
+		}
+		sdkutils.WaitForNoANFResource(cntx, snapshotID, 60, 60)
+		utils.ConsoleOutput("\tSnapshot successfully deleted")
+
+		// Other Volumes Cleanup
+		utils.ConsoleOutput("\tCleaning up other volumes...")
+		volumes := map[string]string{
+			nfsv3VolumeName:  nfsv3VolumeID,
+			nfsv41VolumeName: nfsv41VolumeID,
+		}
+		for volumeName, resourceID := range volumes {
+			utils.ConsoleOutput(fmt.Sprintf("\tCleaning up volume %v", volumeName))
+			err := sdkutils.DeleteAnfVolume(
+				cntx,
+				resourceGroupName,
+				anfAccountName,
+				capacityPoolName,
+				volumeName,
+			)
+			if err != nil {
+				utils.ConsoleOutput(fmt.Sprintf("an error ocurred while deleting volume: %v", err))
+				exitCode = 1
+				return
+			}
+			sdkutils.WaitForNoANFResource(cntx, resourceID, 60, 60)
+			utils.ConsoleOutput("\tVolume successfully deleted")
+		}
 
 		// Pool Cleanup
+		utils.ConsoleOutput("\tCleaning up capacity pool...")
+		err = sdkutils.DeleteAnfCapacityPool(
+			cntx,
+			resourceGroupName,
+			anfAccountName,
+			capacityPoolName,
+		)
+		if err != nil {
+			utils.ConsoleOutput(fmt.Sprintf("an error ocurred while deleting capacity pool: %v", err))
+			exitCode = 1
+			return
+		}
+		sdkutils.WaitForNoANFResource(cntx, capacityPoolID, 60, 60)
+		utils.ConsoleOutput("\tCapacity pool successfully deleted")
 
 		// Account Cleanup
-
+		utils.ConsoleOutput("\tCleaning up account...")
+		err = sdkutils.DeleteAnfAccount(
+			cntx,
+			resourceGroupName,
+			anfAccountName,
+		)
+		if err != nil {
+			utils.ConsoleOutput(fmt.Sprintf("an error ocurred while deleting account: %v", err))
+			exitCode = 1
+			return
+		}
+		sdkutils.WaitForNoANFResource(cntx, acccountID, 60, 60)
+		utils.ConsoleOutput("\tAccount successfully deleted")
+		utils.ConsoleOutput("\tCleanup completed!")
 	}
 }
