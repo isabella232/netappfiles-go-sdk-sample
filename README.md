@@ -104,29 +104,42 @@ Finally, the clean up process takes place (not enabled by default, please change
 
 ## How to run
 
-1. Clone it locally
+1. Go to your GOPATH folder and create the following path
     ```powershell
-    git clone https://github.com/Azure-Samples/netappfiles-python-sdk-sample
+    # PowerShell example
+    cd $env:GOPATH/src
+    mkdir ./github.com/Azure-Samples
     ```
-1. Change folder to **.\netappfiles-python-sdk-sample\src**
-2. Install any missing dependencies as needed
+
     ```bash
-    pip install -r ./requirements.txt
+    # Bash example
+    cd $GOPATH/src
+    mkdir -p ./github.com/Azure-Samples
     ```
-3. Make sure you have the azureauth.json and its environment variable with the path to it defined (as previously describe in [prerequisites](#Prerequisites))
-4. Edit file **example.py** and change the variables contents as appropriate (names are self-explanatory).
-5. Run the script
-    ```powershell
-    python ./example.py
+2. Clone it locally
+    ```bash
+    cd github.com/Azure-Samples
+    git clone https://github.com/Azure-Samples/netappfiles-go-sdk-sample.git
+    ```
+3. Change folder to **netappfiles-go-sdk-sample/src**
+    ```bash
+    cd netappfiles-go-sdk-sample/src
+    ```
+4. Make sure you have the `azureauth.json` and its environment variable with the path to it defined (as previously described at [prerequisites](#Prerequisites))
+6. Edit file **example.go** `var()` block and change the variables contents as appropriate (names are self-explanatory).
+7. Run the sample
+    ```bash
+    go run .
     ```
 
 Sample output
-![e2e execution](./media/e2e-Python.png)
+![e2e execution](./media/e2e-go.png)
 
 ## References
 
-* [Azure Active Directory Python Authentication samples](https://github.com/AzureAD/microsoft-authentication-library-for-python/tree/dev/sample)
+* [Authentication methods in the Azure SDK for Go](https://docs.microsoft.com/en-us/azure/go/azure-sdk-go-authorization)
+* [Azure SDK for Go Samples](https://github.com/Azure-Samples/azure-sdk-for-go-samples) - contains other resource types samples
 * [Resource limits for Azure NetApp Files](https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-resource-limits)
 * [Azure Cloud Shell](https://docs.microsoft.com/en-us/azure/cloud-shell/quickstart)
 * [Azure NetApp Files documentation](https://docs.microsoft.com/en-us/azure/azure-netapp-files/)
-* [Download Azure SDKs](https://azure.microsoft.com/downloads/) 
+* [Azure SDK for Go](https://github.com/Azure/azure-sdk-for-go) 
