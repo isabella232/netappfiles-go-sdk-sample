@@ -235,7 +235,7 @@ func main() {
 	nfsv3VolumeFromSnapshotID = *newNFSv3Volume.ID
 	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume from snapshot successfully created, resource id: %v", *newNFSv3Volume.ID))
 
-	// Update NFS v4 volume size to double its size (200GiB in this example)
+	// Update NFS v4.1 volume size to double its size (200GiB in this example)
 	utils.ConsoleOutput("Updating NFSv4.1 volume size...")
 
 	newVolumeSize := volumeSizeBytes * int64(2)
@@ -356,7 +356,6 @@ func exit(cntx context.Context) {
 			exitCode = 1
 			return
 		}
-		sdkutils.WaitForNoANFResource(cntx, acccountID, 60, 60)
 		utils.ConsoleOutput("\tAccount successfully deleted")
 		utils.ConsoleOutput("\tCleanup completed!")
 	}

@@ -3,7 +3,7 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-// Structs for objects used througouth this sample.
+// Structs for objects used throughout this sample.
 
 package models
 
@@ -16,7 +16,7 @@ type AzureAuthInfo struct {
 	ActiveDirectoryEndpointURL     *string
 	ResourceManagerEndpointURL     *string
 	ActiveDirectoryGraphResourceID *string
-	SqlManagementEndpointURL       *string
+	SQLManagementEndpointURL       *string
 	GalleryEndpointURL             *string
 	ManagementEndpointURL          *string
 }

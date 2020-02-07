@@ -25,14 +25,14 @@ import (
 )
 
 const (
-	userAgent = "anf-sdk-sample-agent"
+	userAgent = "anf-go-sdk-sample-agent"
 	nfsv3     = "NFSv3"
 	nfsv41    = "NFSv4.1"
 	cifs      = "CIFS"
 )
 
 var (
-	validProtocols = []string{nfsv3, nfsv41, "CIFS"}
+	validProtocols = []string{nfsv3, nfsv41, cifs}
 )
 
 func validateAnfServiceLevel(serviceLevel string) (validatedServiceLevel netapp.ServiceLevel, err error) {
