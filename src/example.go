@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	shouldCleanUp           bool   = true
+	shouldCleanUp           bool   = false
 	location                string = "westus2"
 	resourceGroupName       string = "anf02-rg"
 	vnetResourceGroupName   string = "anf02-rg"
