@@ -254,41 +254,32 @@ func CreateAnfVolume(ctx context.Context, location, resourceGroupName, accountNa
 		return netapp.Volume{}, err
 	}
 
-	exportPolicy := netapp.VolumePropertiesExportPolicy{
-		Rules: &[]netapp.ExportPolicyRule{
-			{
-				AllowedClients: to.StringPtr("0.0.0.0/0"),
-				Cifs:           to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == cifs]),
-				Nfsv3:          to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == nfsv3]),
-				Nfsv41:         to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == nfsv41]),
-				RuleIndex:      to.Int32Ptr(1),
-				UnixReadOnly:   to.BoolPtr(unixReadOnly),
-				UnixReadWrite:  to.BoolPtr(unixReadWrite),
+	exportPolicy := netapp.VolumePropertiesExportPolicy{}
+
+	if _, found := utils.FindInSlice(protocolTypes, cifs); !found {
+		exportPolicy = netapp.VolumePropertiesExportPolicy{
+			Rules: &[]netapp.ExportPolicyRule{
+				{
+					AllowedClients: to.StringPtr("0.0.0.0/0"),
+					Cifs:           to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == cifs]),
+					Nfsv3:          to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == nfsv3]),
+					Nfsv41:         to.BoolPtr(map[bool]bool{true: true, false: false}[protocolTypes[0] == nfsv41]),
+					RuleIndex:      to.Int32Ptr(1),
+					UnixReadOnly:   to.BoolPtr(unixReadOnly),
+					UnixReadWrite:  to.BoolPtr(unixReadWrite),
+				},
 			},
-		},
+		}
 	}
 
-	volumeProperties := netapp.VolumeProperties{}
-
-	if snapshotID == "" {
-		volumeProperties = netapp.VolumeProperties{
-			ExportPolicy:   &exportPolicy,
-			ProtocolTypes:  &protocolTypes,
-			ServiceLevel:   svcLevel,
-			SubnetID:       to.StringPtr(subnetID),
-			UsageThreshold: to.Int64Ptr(volumeUsageQuota),
-			CreationToken:  to.StringPtr(volumeName),
-		}
-	} else {
-		volumeProperties = netapp.VolumeProperties{
-			SnapshotID:     to.StringPtr(snapshotID),
-			ExportPolicy:   &exportPolicy,
-			ProtocolTypes:  &protocolTypes,
-			ServiceLevel:   svcLevel,
-			SubnetID:       to.StringPtr(subnetID),
-			UsageThreshold: to.Int64Ptr(volumeUsageQuota),
-			CreationToken:  to.StringPtr(volumeName),
-		}
+	volumeProperties := netapp.VolumeProperties{
+		SnapshotID:     map[bool]*string{true: to.StringPtr(snapshotID), false: nil}[snapshotID != ""],
+		ExportPolicy:   map[bool]*netapp.VolumePropertiesExportPolicy{true: &exportPolicy, false: nil}[protocolTypes[0] != cifs],
+		ProtocolTypes:  &protocolTypes,
+		ServiceLevel:   svcLevel,
+		SubnetID:       to.StringPtr(subnetID),
+		UsageThreshold: to.Int64Ptr(volumeUsageQuota),
+		CreationToken:  to.StringPtr(volumeName),
 	}
 
 	future, err := volumeClient.CreateOrUpdate(
