@@ -104,7 +104,7 @@ func main() {
 
 	// Azure NetApp Files Account creation
 	utils.ConsoleOutput("Creating Azure NetApp Files account...")
-	account, err := sdkutils.CreateAnfAccount(cntx, location, resourceGroupName, anfAccountName, sampleTags)
+	account, err := sdkutils.CreateAnfAccount(cntx, location, resourceGroupName, anfAccountName, nil, sampleTags)
 	if err != nil {
 		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating account: %v", err))
 		exitCode = 1

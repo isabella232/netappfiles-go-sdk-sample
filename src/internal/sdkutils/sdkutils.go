@@ -155,18 +155,27 @@ func GetResourceByID(ctx context.Context, resourceID, APIVersion string) (resour
 }
 
 // CreateAnfAccount creates an ANF Account resource
-func CreateAnfAccount(ctx context.Context, location, resourceGroupName, accountName string, tags map[string]*string) (netapp.Account, error) {
+func CreateAnfAccount(ctx context.Context, location, resourceGroupName, accountName string, activeDirectories []netapp.ActiveDirectory, tags map[string]*string) (netapp.Account, error) {
 
 	accountClient, err := getAccountsClient()
 	if err != nil {
 		return netapp.Account{}, err
 	}
 
+	accountProperties := netapp.AccountProperties{}
+
+	if activeDirectories != nil {
+		accountProperties = netapp.AccountProperties{
+			ActiveDirectories: &activeDirectories,
+		}
+	}
+
 	future, err := accountClient.CreateOrUpdate(
 		ctx,
 		netapp.Account{
-			Location: to.StringPtr(location),
-			Tags:     tags,
+			Location:          to.StringPtr(location),
+			Tags:              tags,
+			AccountProperties: &accountProperties,
 		},
 		resourceGroupName,
 		accountName,
