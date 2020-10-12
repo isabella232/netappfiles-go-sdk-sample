@@ -21,9 +21,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/sdkutils"
-	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/utils"
-	"github.com/Azure/azure-sdk-for-go/services/netapp/mgmt/2019-10-01/netapp"
+	"github.com/Azure-Samples/netappfiles-go-sdk-sample/netappfiles-go-sdk-sample/internal/sdkutils"
+	"github.com/Azure-Samples/netappfiles-go-sdk-sample/netappfiles-go-sdk-sample/internal/utils"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/netapp/mgmt/netapp"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/yelinaung/go-haikunator"
 )
@@ -150,6 +150,7 @@ func main() {
 		false,
 		true,
 		sampleTags,
+		netapp.VolumePropertiesDataProtection{}, // This empty object is provided as nil since dataprotection is not scope of this sample
 	)
 	if err != nil {
 		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating NFSv3 volume: %v", err))
@@ -176,6 +177,7 @@ func main() {
 		false,
 		true,
 		sampleTags,
+		netapp.VolumePropertiesDataProtection{}, // This empty object is provided as nil since dataprotection is not scope of this sample
 	)
 	if err != nil {
 		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating NFSv4.1 volume: %v", err))
@@ -226,6 +228,7 @@ func main() {
 		false,
 		true,
 		sampleTags,
+		netapp.VolumePropertiesDataProtection{}, // This empty object is provided as nil since dataprotection is not scope of this sample
 	)
 	if err != nil {
 		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating NFSv3 volume from snapshot: %v", err))
@@ -243,7 +246,7 @@ func main() {
 		UsageThreshold: &newVolumeSize,
 	}
 
-	updatedNFS41Volume, err := sdkutils.UpdateAnfVolume(
+	_, err = sdkutils.UpdateAnfVolume(
 		cntx,
 		location,
 		resourceGroupName,
@@ -258,7 +261,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 volume successfully update with new size %v, resource id: %v", newVolumeSize, *updatedNFS41Volume.ID))
+	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 volume successfully update with new size %v", newVolumeSize))
 
 }
 

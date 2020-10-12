@@ -14,7 +14,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Azure-Samples/netappfiles-go-sdk-sample/internal/models"
+	"github.com/Azure-Samples/netappfiles-go-sdk-sample/netappfiles-go-sdk-sample/internal/models"
 )
 
 // PrintHeader prints a header message

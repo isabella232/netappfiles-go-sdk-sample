@@ -85,16 +85,16 @@ Finally, the clean up process takes place (not enabled by default, please change
 | File/folder                 | Description                                                                                                      |
 |-----------------------------|------------------------------------------------------------------------------------------------------------------|
 | `media\`                       | Folder that contains screenshots.                                                                                              |
-| `src\`                       | Sample source code folder.                                                                                              |
-| `src\example.go`            | Sample main file.                                                                                                |
-| `src\go.mod`            |The go.mod file defines the module’s module path, which is also the import path used for the root directory, and its dependency requirements, which are the other modules needed for a successful build.|
-| `src\go.sum`            | The go.sum file contains hashes for each of the modules and it's versions used in this sample|
-| `src\internal\`       | Folder that contains all internal packages dedicated to this sample.                |
-| `src\internal\iam\iam.go` | Package that allows us to get the `authorizer` object from Azure Active Directory by using the `NewAuthorizerFromFile` function. |
-| `src\internal\models\models.go`       | Provides models for this sample, e.g. `AzureAuthInfo` models the authorization file.                   |
-| `src\internal\sdkutils\sdkutils.go`       | Contains all functions that directly uses the SDK and some helper functions.                   |
-| `src\internal\uri\uri.go`       | Provides various functions to parse resource IDs and get information or perform validations.                   |
-| `src\internal\utils\utils.go`       | Provides generic functions.                   |
+| `netappfiles-go-sdk-sample\`                       | Sample source code folder.                                                                                              |
+| `netappfiles-go-sdk-sample\example.go`            | Sample main file.                                                                                                |
+| `netappfiles-go-sdk-sample\go.mod`            |The go.mod file defines the module’s module path, which is also the import path used for the root directory, and its dependency requirements, which are the other modules needed for a successful build.|
+| `netappfiles-go-sdk-sample\go.sum`            | The go.sum file contains hashes for each of the modules and it's versions used in this sample|
+| `netappfiles-go-sdk-sample\internal\`       | Folder that contains all internal packages dedicated to this sample.                |
+| `netappfiles-go-sdk-sample\internal\iam\iam.go` | Package that allows us to get the `authorizer` object from Azure Active Directory by using the `NewAuthorizerFromFile` function. |
+| `netappfiles-go-sdk-sample\internal\models\models.go`       | Provides models for this sample, e.g. `AzureAuthInfo` models the authorization file.                   |
+| `netappfiles-go-sdk-sample\internal\sdkutils\sdkutils.go`       | Contains all functions that directly uses the SDK and some helper functions.                   |
+| `netappfiles-go-sdk-sample\internal\uri\uri.go`       | Provides various functions to parse resource IDs and get information or perform validations.                   |
+| `netappfiles-go-sdk-sample\internal\utils\utils.go`       | Provides generic functions.                   |
 | `.gitignore`                | Define what to ignore at commit time.                                                                            |
 | `CHANGELOG.md`              | List of changes to the sample.                                                                                   |
 | `CONTRIBUTING.md`           | Guidelines for contributing to the sample.                                                                       |
@@ -121,9 +121,9 @@ Finally, the clean up process takes place (not enabled by default, please change
     cd github.com/Azure-Samples
     git clone https://github.com/Azure-Samples/netappfiles-go-sdk-sample.git
     ```
-3. Change folder to **netappfiles-go-sdk-sample/src**
+3. Change folder to **netappfiles-go-sdk-sample/netappfiles-go-sdk-sample**
     ```bash
-    cd netappfiles-go-sdk-sample/src
+    cd netappfiles-go-sdk-sample/netappfiles-go-sdk-sample
     ```
 4. Make sure you have the `azureauth.json` and its environment variable with the path to it defined (as previously described at [prerequisites](#Prerequisites))
 6. Edit file **example.go** `var()` block and change the variables contents as appropriate (names are self-explanatory).
