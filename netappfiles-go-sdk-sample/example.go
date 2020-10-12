@@ -34,10 +34,10 @@ const (
 
 var (
 	shouldCleanUp           bool   = false
-	location                string = "westus2"
-	resourceGroupName       string = "anf02-rg"
-	vnetResourceGroupName   string = "anf02-rg"
-	vnetName                string = "vnet-03"
+	location                string = "eastus"
+	resourceGroupName       string = "anf01-rg"
+	vnetResourceGroupName   string = "anf01-rg"
+	vnetName                string = "vnet-01"
 	subnetName              string = "anf-sn"
 	anfAccountName          string = haikunator.New(time.Now().UTC().UnixNano()).Haikunate()
 	capacityPoolName        string = "Pool01"
