@@ -286,7 +286,7 @@ func exit(cntx context.Context) {
 			exitCode = 1
 			return
 		}
-		sdkutils.WaitForNoANFResource(cntx, nfsv3VolumeFromSnapshotID, 60, 60)
+		sdkutils.WaitForNoANFResource(cntx, nfsv3VolumeFromSnapshotID, 60, 60, false)
 		utils.ConsoleOutput("\tVolume successfully deleted")
 
 		// Snapshot Cleanup
@@ -304,7 +304,7 @@ func exit(cntx context.Context) {
 			exitCode = 1
 			return
 		}
-		sdkutils.WaitForNoANFResource(cntx, snapshotID, 60, 60)
+		sdkutils.WaitForNoANFResource(cntx, snapshotID, 60, 60, false)
 		utils.ConsoleOutput("\tSnapshot successfully deleted")
 
 		// Other Volumes Cleanup
@@ -327,7 +327,7 @@ func exit(cntx context.Context) {
 				exitCode = 1
 				return
 			}
-			sdkutils.WaitForNoANFResource(cntx, resourceID, 60, 60)
+			sdkutils.WaitForNoANFResource(cntx, resourceID, 60, 60, false)
 			utils.ConsoleOutput("\tVolume successfully deleted")
 		}
 
@@ -344,7 +344,7 @@ func exit(cntx context.Context) {
 			exitCode = 1
 			return
 		}
-		sdkutils.WaitForNoANFResource(cntx, capacityPoolID, 60, 60)
+		sdkutils.WaitForNoANFResource(cntx, capacityPoolID, 60, 60, false)
 		utils.ConsoleOutput("\tCapacity pool successfully deleted")
 
 		// Account Cleanup
