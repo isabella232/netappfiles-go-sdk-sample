@@ -104,7 +104,7 @@ func main() {
 
 	// Azure NetApp Files Account creation
 	utils.ConsoleOutput("Creating Azure NetApp Files account...")
-	account, err := sdkutils.CreateAnfAccount(cntx, location, resourceGroupName, anfAccountName, nil, sampleTags)
+	account, err := sdkutils.CreateANFAccount(cntx, location, resourceGroupName, anfAccountName, nil, sampleTags)
 	if err != nil {
 		utils.ConsoleOutput(fmt.Sprintf("an error ocurred while creating account: %v", err))
 		exitCode = 1
@@ -115,7 +115,7 @@ func main() {
 
 	// Capacity pool creation
 	utils.ConsoleOutput("Creating Capacity Pool...")
-	capacityPool, err := sdkutils.CreateAnfCapacityPool(
+	capacityPool, err := sdkutils.CreateANFCapacityPool(
 		cntx,
 		location,
 		resourceGroupName,
@@ -135,7 +135,7 @@ func main() {
 
 	// NFS v3 volume creation
 	utils.ConsoleOutput("Creating NFSv3 Volume...")
-	nfsv3Volume, err := sdkutils.CreateAnfVolume(
+	nfsv3Volume, err := sdkutils.CreateANFVolume(
 		cntx,
 		location,
 		resourceGroupName,
@@ -162,7 +162,7 @@ func main() {
 
 	// NFS v4.1 volume creation
 	utils.ConsoleOutput("Creating NFSv4.1 Volume...")
-	nfsv41Volume, err := sdkutils.CreateAnfVolume(
+	nfsv41Volume, err := sdkutils.CreateANFVolume(
 		cntx,
 		location,
 		resourceGroupName,
@@ -191,7 +191,7 @@ func main() {
 	// Note: there is no difference between protocol types when creating a snapshot
 	//       we're taking it from NFSv3 in this example just for convenience
 	utils.ConsoleOutput("Creating Snapshot from NFSv3 Volume...")
-	snapshot, err := sdkutils.CreateAnfSnapshot(
+	snapshot, err := sdkutils.CreateANFSnapshot(
 		cntx,
 		location,
 		resourceGroupName,
@@ -213,7 +213,7 @@ func main() {
 	// Note: At the time when this sample code was written, creating a volume from snapshot with a different protocol
 	//       other than the protocol from the source volume is not supported.
 	utils.ConsoleOutput("Creating new NFSv3 Volume from Snapshot...")
-	newNFSv3Volume, err := sdkutils.CreateAnfVolume(
+	newNFSv3Volume, err := sdkutils.CreateANFVolume(
 		cntx,
 		location,
 		resourceGroupName,
@@ -246,7 +246,7 @@ func main() {
 		UsageThreshold: &newVolumeSize,
 	}
 
-	_, err = sdkutils.UpdateAnfVolume(
+	_, err = sdkutils.UpdateANFVolume(
 		cntx,
 		location,
 		resourceGroupName,
@@ -274,7 +274,7 @@ func exit(cntx context.Context) {
 		// Volume restored from Snaphost cleanup
 		utils.ConsoleOutput("\tCleaning up NFSv3 Volume Restored from Snapshot ...")
 		time.Sleep(3 * time.Second)
-		err := sdkutils.DeleteAnfVolume(
+		err := sdkutils.DeleteANFVolume(
 			cntx,
 			resourceGroupName,
 			anfAccountName,
@@ -291,7 +291,7 @@ func exit(cntx context.Context) {
 
 		// Snapshot Cleanup
 		utils.ConsoleOutput("\tCleaning up NFSv3 Volume Snapshot ...")
-		err = sdkutils.DeleteAnfSnapshot(
+		err = sdkutils.DeleteANFSnapshot(
 			cntx,
 			resourceGroupName,
 			anfAccountName,
@@ -315,7 +315,7 @@ func exit(cntx context.Context) {
 		}
 		for volumeName, resourceID := range volumes {
 			utils.ConsoleOutput(fmt.Sprintf("\tCleaning up volume %v", volumeName))
-			err := sdkutils.DeleteAnfVolume(
+			err := sdkutils.DeleteANFVolume(
 				cntx,
 				resourceGroupName,
 				anfAccountName,
@@ -333,7 +333,7 @@ func exit(cntx context.Context) {
 
 		// Pool Cleanup
 		utils.ConsoleOutput("\tCleaning up capacity pool...")
-		err = sdkutils.DeleteAnfCapacityPool(
+		err = sdkutils.DeleteANFCapacityPool(
 			cntx,
 			resourceGroupName,
 			anfAccountName,
@@ -349,7 +349,7 @@ func exit(cntx context.Context) {
 
 		// Account Cleanup
 		utils.ConsoleOutput("\tCleaning up account...")
-		err = sdkutils.DeleteAnfAccount(
+		err = sdkutils.DeleteANFAccount(
 			cntx,
 			resourceGroupName,
 			anfAccountName,
