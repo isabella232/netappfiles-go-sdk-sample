@@ -11,7 +11,7 @@ description: "This project demonstrates how to use a to perform management CRUD 
 
 # Azure NetAppFiles SDK Sample for Go
 
-This project demonstrates how to perform management CRUD operations for Microsoft.NetApp resource provider using GoLang.
+This project demonstrates how to perform management CRUD operations for Microsoft.NetApp resource provider using GoLang. 
 
 In this sample application we perform the following operations:
 
@@ -34,7 +34,7 @@ If you don't already have a Microsoft Azure subscription, you can get a FREE tri
 ## Prerequisites
 
 1. Go installed \(if not installed yet, follow the [official instructions](https://golang.org/dl/)\)
-3. Azure Subscription
+3. Azure Subscription. 
 4. Subscription needs to be whitelisted for Azure NetApp Files. For more information, please refer to [this](https://docs.microsoft.com/azure/azure-netapp-files/azure-netapp-files-register#waitlist) document.
 5. Resource Group created
 6. Virtual Network with a delegated subnet to Microsoft.Netapp/volumes resource. For more information, please refer to [Guidelines for Azure NetApp Files network planning](https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-network-topologies)
