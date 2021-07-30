@@ -19,7 +19,7 @@ import (
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/netappfiles-go-sdk-sample/internal/uri"
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/netappfiles-go-sdk-sample/internal/utils"
 
-	"github.com/Azure/azure-sdk-for-go/services/netapp/mgmt/2020-06-01/netapp"
+	"github.com/Azure/azure-sdk-for-go/services/netapp/mgmt/2021-04-01/netapp"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-10-01/resources"
 	"github.com/Azure/go-autorest/autorest/to"
 )
@@ -41,11 +41,11 @@ func validateANFServiceLevel(serviceLevel string) (validatedServiceLevel netapp.
 
 	switch strings.ToLower(serviceLevel) {
 	case "ultra":
-		svcLevel = netapp.Ultra
+		svcLevel = netapp.ServiceLevelUltra
 	case "premium":
-		svcLevel = netapp.Premium
+		svcLevel = netapp.ServiceLevelPremium
 	case "standard":
-		svcLevel = netapp.Standard
+		svcLevel = netapp.ServiceLevelStandard
 	default:
 		return "", fmt.Errorf("invalid service level, supported service levels are: %v", netapp.PossibleServiceLevelValues())
 	}
@@ -498,11 +498,11 @@ func CreateANFSnapshotPolicy(ctx context.Context, resourceGroupName, accountName
 }
 
 // UpdateANFSnapshotPolicy update an ANF volume
-func UpdateANFSnapshotPolicy(ctx context.Context, resourceGroupName, accountName, policyName string, snapshotPolicyPatch netapp.SnapshotPolicyPatch) (netapp.SnapshotPolicy, error) {
+func UpdateANFSnapshotPolicy(ctx context.Context, resourceGroupName, accountName, policyName string, snapshotPolicyPatch netapp.SnapshotPolicyPatch) (netapp.SnapshotPoliciesUpdateFuture, error) {
 
 	snapshotPolicyClient, err := getSnapshotPoliciesClient()
 	if err != nil {
-		return netapp.SnapshotPolicy{}, err
+		return netapp.SnapshotPoliciesUpdateFuture{}, err
 	}
 
 	snapshotPolicy, err := snapshotPolicyClient.Update(
@@ -514,7 +514,7 @@ func UpdateANFSnapshotPolicy(ctx context.Context, resourceGroupName, accountName
 	)
 
 	if err != nil {
-		return netapp.SnapshotPolicy{}, fmt.Errorf("cannot update snapshot policy: %v", err)
+		return netapp.SnapshotPoliciesUpdateFuture{}, fmt.Errorf("cannot update snapshot policy: %v", err)
 	}
 
 	return snapshotPolicy, nil
@@ -649,7 +649,7 @@ func WaitForNoANFResource(ctx context.Context, resourceID string, intervalInSec 
 			)
 		} else if uri.IsANFVolume(resourceID) {
 			client, _ := getVolumesClient()
-			if checkForReplication == false {
+			if !checkForReplication {
 				_, err = client.Get(
 					ctx,
 					uri.GetResourceGroup(resourceID),
@@ -719,7 +719,7 @@ func WaitForANFResource(ctx context.Context, resourceID string, intervalInSec in
 			)
 		} else if uri.IsANFVolume(resourceID) {
 			client, _ := getVolumesClient()
-			if checkForReplication == false {
+			if !checkForReplication {
 				_, err = client.Get(
 					ctx,
 					uri.GetResourceGroup(resourceID),

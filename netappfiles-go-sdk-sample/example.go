@@ -111,7 +111,7 @@ func main() {
 		return
 	}
 	acccountID = *account.ID
-	utils.ConsoleOutput(fmt.Sprintf("Account successfully created, resource id: %v", *account.ID))
+	utils.ConsoleOutput(fmt.Sprintf("Account successfully created, resource id: %v", acccountID))
 
 	// Capacity pool creation
 	utils.ConsoleOutput("Creating Capacity Pool...")
@@ -131,7 +131,7 @@ func main() {
 		return
 	}
 	capacityPoolID = *capacityPool.ID
-	utils.ConsoleOutput(fmt.Sprintf("Capacity Pool successfully created, resource id: %v", *capacityPool.ID))
+	utils.ConsoleOutput(fmt.Sprintf("Capacity Pool successfully created, resource id: %v", capacityPoolID))
 
 	// NFS v3 volume creation
 	utils.ConsoleOutput("Creating NFSv3 Volume...")
@@ -158,7 +158,7 @@ func main() {
 		return
 	}
 	nfsv3VolumeID = *nfsv3Volume.ID
-	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume successfully created, resource id: %v", *nfsv3Volume.ID))
+	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume successfully created, resource id: %v", nfsv3VolumeID))
 
 	// NFS v4.1 volume creation
 	utils.ConsoleOutput("Creating NFSv4.1 Volume...")
@@ -185,7 +185,7 @@ func main() {
 		return
 	}
 	nfsv41VolumeID = *nfsv41Volume.ID
-	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 volume successfully created, resource id: %v", *nfsv41Volume.ID))
+	utils.ConsoleOutput(fmt.Sprintf("NFSv4.1 volume successfully created, resource id: %v", nfsv41VolumeID))
 
 	// NFS v3 snapshot creation
 	// Note: there is no difference between protocol types when creating a snapshot
@@ -207,7 +207,7 @@ func main() {
 		return
 	}
 	snapshotID = *snapshot.ID
-	utils.ConsoleOutput(fmt.Sprintf("Snapshot successfully created, resource id: %v", *snapshot.ID))
+	utils.ConsoleOutput(fmt.Sprintf("Snapshot successfully created, resource id: %v", snapshotID))
 
 	// Creating new volume (NFSv3) from Snapshot
 	// Note: At the time when this sample code was written, creating a volume from snapshot with a different protocol
@@ -236,7 +236,7 @@ func main() {
 		return
 	}
 	nfsv3VolumeFromSnapshotID = *newNFSv3Volume.ID
-	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume from snapshot successfully created, resource id: %v", *newNFSv3Volume.ID))
+	utils.ConsoleOutput(fmt.Sprintf("NFSv3 volume from snapshot successfully created, resource id: %v", nfsv3VolumeFromSnapshotID))
 
 	// Update NFS v4.1 volume size to double its size (200GiB in this example)
 	utils.ConsoleOutput("Updating NFSv4.1 volume size...")
