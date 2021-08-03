@@ -13,8 +13,10 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
+	"syscall"
 
 	"github.com/Azure-Samples/netappfiles-go-sdk-sample/netappfiles-go-sdk-sample/internal/models"
+	"golang.org/x/term"
 )
 
 // PrintHeader prints a header message
@@ -52,7 +54,7 @@ func GetTiBInBytes(size uint32) uint64 {
 func ReadAzureBasicInfoJSON(path string) (*models.AzureBasicInfo, error) {
 	infoJSON, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Sprintf("failed to read file: %v", err)
+		fmt.Printf("failed to read file: %v", err)
 		return &models.AzureBasicInfo{}, err
 	}
 	var info models.AzureBasicInfo
@@ -69,4 +71,12 @@ func FindInSlice(slice []string, val string) (int, bool) {
 		}
 	}
 	return -1, false
+}
+
+// GetPassword gets a password
+func GetPassword(prompt string) string {
+	fmt.Print(prompt)
+	bytePassword, _ := term.ReadPassword(int(syscall.Stdin))
+	fmt.Println()
+	return strings.TrimSpace(string(bytePassword))
 }
