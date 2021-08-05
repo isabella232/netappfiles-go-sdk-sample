@@ -60,7 +60,7 @@ var (
 	nfsv41VolumeID            string = ""
 	nfsv3VolumeFromSnapshotID string = ""
 	capacityPoolID            string = ""
-	acccountID                string = ""
+	accountID                 string = ""
 )
 
 func main() {
@@ -110,8 +110,8 @@ func main() {
 		exitCode = 1
 		return
 	}
-	acccountID = *account.ID
-	utils.ConsoleOutput(fmt.Sprintf("Account successfully created, resource id: %v", acccountID))
+	accountID = *account.ID
+	utils.ConsoleOutput(fmt.Sprintf("Account successfully created, resource id: %v", accountID))
 
 	// Capacity pool creation
 	utils.ConsoleOutput("Creating Capacity Pool...")
